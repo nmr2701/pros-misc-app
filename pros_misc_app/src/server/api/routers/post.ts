@@ -7,35 +7,36 @@ import {
 } from "~/server/api/trpc";
 
 export const postRouter = createTRPCRouter({
-  hello: publicProcedure
-    .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
-    }),
 
-  create: protectedProcedure
-    .input(z.object({ name: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
-        data: {
-          name: input.name,
-          createdBy: { connect: { id: ctx.session.user.id } },
-        },
+  uploadFiles: protectedProcedure
+    .input(z.object({ files: z.array(z.string()) }))
+    .mutation(async ({ input, ctx }) => {
+      const { files } = input;
+
+      const azureFunctionUrl = "https://your-azure-function-url";
+
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("files", file); // Adjust the key as needed
       });
+      
+      try {
+        const response = await fetch(azureFunctionUrl, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload files");
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to upload files:", error);
+        return { success: false };
+      }
+
+
     }),
-
-  getLatest: protectedProcedure.query(async ({ ctx }) => {
-    const post = await ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
-      where: { createdBy: { id: ctx.session.user.id } },
-    });
-
-    return post ?? null;
-  }),
-
-  getSecretMessage: protectedProcedure.query(() => {
-    return "you can now see this secret message!";
-  }),
+  
 });
