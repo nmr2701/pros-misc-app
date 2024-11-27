@@ -1,15 +1,14 @@
 import React, { InputHTMLAttributes } from 'react'; // Import InputHTMLAttributes
 import { api } from '~/utils/api';
 
-interface ExtendedInputProps extends InputHTMLAttributes<HTMLInputElement> {
-    webkitdirectory?: boolean; // Add webkitdirectory property
-  }
 
 const UploadButton: React.FC = () => {
-
+  interface ExtendedInputProps extends InputHTMLAttributes<HTMLInputElement> {
+    webkitdirectory?: boolean; // Extend the interface to include webkitdirectory
+  }
   const uploadFilesMutation = api.post.uploadFiles.useMutation(); // Initialize the mutation
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const filesData: Promise<any>[] = Array.from(files).map(file => {
@@ -28,31 +27,27 @@ const UploadButton: React.FC = () => {
         });
       });
   
-      Promise.all(filesData).then((data) => {
-        uploadFilesMutation.mutate({ files: data }); // Call the mutation
-      });
+      try {
+        const data = await Promise.all(filesData);
+        await uploadFilesMutation.mutateAsync({ files: data });
+      } catch (error) {
+        console.error("Error uploading files:", error);
+      }
     }
+    console.log(event.target.files);
   };
   return (
     <div>
       <input 
         type="file" 
         onChange={handleFileUpload} 
-        accept=".txt" // Accept only text files
-        webkitdirectory // Allow folder uploads in supported browsers
         multiple // Allow multiple file selection
+        accept='.txt' // Accept only .txt files
         {...({} as ExtendedInputProps)} // Cast to ExtendedInputProps
-
-      />
-      <button onClick={() => {
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement; // Cast to HTMLInputElement
-        if (fileInput) {
-          fileInput.click();
-        }
-      }}>
-        Upload Files
-      </button>
+        />
     </div>
-  );
+      
+      
+    )
 };
 export default UploadButton;

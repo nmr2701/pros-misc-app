@@ -16,29 +16,40 @@ export const postRouter = createTRPCRouter({
     files: z.array(z.object({
       name: z.string(),
       caseText: z.string(),
-      // New fields added
       misconductType: z.string().nullable(), // New field for type of misconduct
       verdict: z.string().nullable(), // New field for verdict
     })),
   }))
   .mutation(async ({ input, ctx }) => {
 
+    if (!input.files || input.files.length === 0) {
+      throw new Error("No files provided");
+    }
+
+    console.log("Uploading files:", input.files[0]!.name);
+
+
     if (!ctx.session || !ctx.session.user || !ctx.session.user.email) {
       throw new Error("Unauthorized");
     }
 
-    const filesData = input.files.map(file => ({
-      id: cuid(), // Generate a unique ID
-      name: file.name, // Use the file name
-      date: new Date().toISOString().split('T')[0], // Current date without time
-      userEmail: ctx.session.user.email!, // User email
-      misconductType: null, // Set to null
-      verdict: null, // Set to null
-      caseText: file.caseText, // Store the actual text file
-    }));
+    try {
+      const filesData = input.files.map(file => ({
+        id: cuid(),
+        name: file.name,
+        date: new Date().toISOString().split('T')[0],
+        userEmail: ctx.session.user.email!,
+        misconductType: null,
+        verdict: null,
+        caseText: file.caseText,
+      }));
 
-    await db.files.createMany({ data: filesData });
-
-  }),
+      await db.files.createMany({ data: filesData });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+      throw new Error("Failed to upload files");
+    }
+  }
+  ),
 });
 
