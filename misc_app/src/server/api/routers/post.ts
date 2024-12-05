@@ -1,17 +1,28 @@
 import { z } from "zod";
 import { db } from "~/server/db"; // Assuming you have a database instance
 import cuid from "cuid"; // Import the cuid library
+import { CreateAWSLambdaContextOptions, awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import AWS from 'aws-sdk';
+import { env } from "~/env"
 
+
+AWS.config.update({ region: 'us-east-2' }); // e.g., 'us-east-1'
+
+const lambda = new AWS.Lambda({
+  region: 'us-east-2', // Replace with your AWS region
+  accessKeyId: env.ACCESS_KEY,
+  secretAccessKey: env.SECRET_ACCESS_KEY
+});
 
 import {
   createTRPCRouter,
-  protectedProcedure,
+  // protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
 
 export const postRouter = createTRPCRouter({
 
-  uploadFiles: protectedProcedure
+  uploadFiles: publicProcedure
   .input(z.object({
     files: z.array(z.object({
       name: z.string(),
@@ -27,29 +38,42 @@ export const postRouter = createTRPCRouter({
     }
 
     console.log("Uploading files:", input.files[0]!.name);
-
-
-    if (!ctx.session || !ctx.session.user || !ctx.session.user.email) {
-      throw new Error("Unauthorized");
-    }
-
     try {
-      const filesData = input.files.map(file => ({
-        id: cuid(),
-        name: file.name,
-        date: new Date().toISOString().split('T')[0],
-        userEmail: ctx.session.user.email!,
-        misconductType: null,
-        verdict: null,
-        caseText: file.caseText,
-      }));
+      const filesData = input.files.map(async (file) => {
+        const params = {
+          FunctionName: 'testlambda', // Replace with your Lambda function name
+          Payload: JSON.stringify({ case_text: file.caseText }), // Pass caseText as payload
+        };
 
-      await db.files.createMany({ data: filesData });
+        const lambdaResponse = await lambda.invoke(params).promise();
+        const responsePayload = JSON.parse(lambdaResponse.Payload as string); // Parse the response payload
+        console.log("1",lambdaResponse)
+        console.log("2", responsePayload)
+        return {
+          id: cuid(),
+          name: file.name,
+          date: new Date(),
+          userEmail: "test@test.test",
+          misconductType: responsePayload, // Set misconductType from Lambda response
+          verdict: null,
+          caseText: file.caseText,
+        };
+      });
+
+      // Wait for all promises to resolve
+      const resolvedFilesData = await Promise.all(filesData);
+
+      await db.files.createMany({ data: resolvedFilesData });
     } catch (error) {
       console.error("Error uploading files:", error);
       throw new Error("Failed to upload files");
     }
-  }
-  ),
+  }),
+
+  getFiles: publicProcedure
+  .query(async ({ ctx }) => {
+    const files = await db.files.findMany();
+    return files;
+  }),
 });
 

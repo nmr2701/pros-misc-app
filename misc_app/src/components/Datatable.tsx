@@ -1,22 +1,31 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { api } from '~/utils/api';
+
 const DataTable = () => {
   // Sample data for the table
-  const rows = [
-    { id: 1, name: 'File1.txt', date: '2023-01-01', decision: 'Successful', confidence: 'High' },
-    { id: 2, name: 'File2.txt', date: '2023-01-02', decision: 'Harmless Error', confidence: 'Low' },
-    { id: 3, name: 'File3.txt', date: '2023-01-03', decision: 'Unsuccessful', confidence: 'Medium' },
-  ];
-  return (
+  const { data: rows = [], isLoading } = api.post.getFiles.useQuery(); // Fetch data from the database
+
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Show loading state
+  }
+
+
+
+  const sortedRows = rows.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+
+    return (
     <TableContainer component={Paper}>
-       <Table>
+      <Table>
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Date</TableCell>
-            <TableCell>Decision</TableCell> {/* Added Decision column */}
-            <TableCell>Confidence</TableCell> {/* Added Confidence column */}
+            <TableCell>Misconduct Type</TableCell>
+            <TableCell>Verdict</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -24,9 +33,9 @@ const DataTable = () => {
             <TableRow key={row.id}>
               <TableCell>{row.id}</TableCell>
               <TableCell>{row.name}</TableCell>
-              <TableCell>{row.date}</TableCell>
-              <TableCell>{row.decision}</TableCell> {/* Added Decision data */}
-              <TableCell>{row.confidence}</TableCell> {/* Added Confidence data */}
+              <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell> {/* Format date to show only the date */}
+              <TableCell>{row.misconductType}</TableCell> {/* Assuming misconductType is the confidence */}
+              <TableCell>{row.verdict}</TableCell> {/* Assuming verdict is the decision */}
             </TableRow>
           ))}
         </TableBody>
