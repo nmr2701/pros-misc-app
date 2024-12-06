@@ -22,6 +22,7 @@ const DataTable = () => {
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
+            <TableCell>Email</TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Date</TableCell>
             <TableCell>Misconduct Type</TableCell>
@@ -32,6 +33,7 @@ const DataTable = () => {
           {rows.map((row) => (
             <TableRow key={row.id}>
               <TableCell>{row.id}</TableCell>
+              <TableCell>{row.userEmail}</TableCell>
               <TableCell>{row.name}</TableCell>
               <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell> {/* Format date to show only the date */}
               <TableCell>{row.misconductType}</TableCell> {/* Assuming misconductType is the confidence */}

@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { db } from "~/server/db"; // Assuming you have a database instance
 import cuid from "cuid"; // Import the cuid library
-import { CreateAWSLambdaContextOptions, awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import AWS from 'aws-sdk';
 import { env } from "~/env"
+
 
 
 AWS.config.update({ region: 'us-east-2' }); // e.g., 'us-east-1'
@@ -19,6 +19,7 @@ import {
   // protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+import { EmailAddress } from "@clerk/nextjs/server";
 
 export const postRouter = createTRPCRouter({
 
@@ -29,6 +30,7 @@ export const postRouter = createTRPCRouter({
       caseText: z.string(),
       misconductType: z.string().nullable(), // New field for type of misconduct
       verdict: z.string().nullable(), // New field for verdict
+      userEmail: z.string(),
     })),
   }))
   .mutation(async ({ input, ctx }) => {
@@ -53,7 +55,7 @@ export const postRouter = createTRPCRouter({
           id: cuid(),
           name: file.name,
           date: new Date(),
-          userEmail: "test@test.test",
+          userEmail: file.userEmail,
           misconductType: responsePayload, // Set misconductType from Lambda response
           verdict: null,
           caseText: file.caseText,
