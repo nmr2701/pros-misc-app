@@ -3,12 +3,20 @@ import { db } from "~/server/db"; // Assuming you have a database instance
 import cuid from "cuid"; // Import the cuid library
 import AWS from 'aws-sdk';
 import { env } from "~/env"
+import axios from 'axios';
+import { ECS } from 'aws-sdk';
 
 
 
 AWS.config.update({ region: 'us-east-2' }); // e.g., 'us-east-1'
 
 const lambda = new AWS.Lambda({
+  region: 'us-east-2', // Replace with your AWS region
+  accessKeyId: env.ACCESS_KEY,
+  secretAccessKey: env.SECRET_ACCESS_KEY
+});
+
+const ecs = new AWS.ECS({
   region: 'us-east-2', // Replace with your AWS region
   accessKeyId: env.ACCESS_KEY,
   secretAccessKey: env.SECRET_ACCESS_KEY
@@ -49,8 +57,39 @@ export const postRouter = createTRPCRouter({
 
         const lambdaResponse = await lambda.invoke(params).promise();
         const responsePayload = JSON.parse(lambdaResponse.Payload as string); // Parse the response payload
-        console.log("1",lambdaResponse)
-        console.log("2", responsePayload)
+
+        // const ecsParams = {
+        //   cluster: 'sparkmisconduct', // Replace with your ECS cluster name
+        //   taskDefinition: 'spark-msic:1',
+        //   launchType: 'FARGATE',
+        //   networkConfiguration: {
+        //     awsvpcConfiguration: {
+        //       subnets: [
+        //         'subnet-01027964882c086b8 '
+        //       ],
+        //       assignPublicIp: 'ENABLED',
+        //     },
+        //   },
+        //   overrides: {
+        //     containerOverrides: [
+        //       {
+        //         name: 'misc-bert',
+        //         environment: [
+        //           {
+        //             name: 'case_text',
+        //             value: "hi",
+        //           },
+        //         ],
+        //       },
+        //     ],
+        //   },
+        // };
+
+        // const ecsResponse = await ecs.runTask(ecsParams).promise();
+
+        // console.log("hereee response:", ecsResponse);
+
+
         return {
           id: cuid(),
           name: file.name,

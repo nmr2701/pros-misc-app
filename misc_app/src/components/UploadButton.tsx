@@ -11,15 +11,23 @@ const UploadButton: React.FC = () => {
 
   const { user } = useUser()
 
+  interface FileData { // Define a specific type for file data
+    name: string;
+    caseText: string;
+    misconductType: string | null;
+    verdict: string | null;
+    userEmail: string;
+  }
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      const filesData: Promise<any>[] = Array.from(files).map(file => {
+      const filesData: Promise<FileData>[] = Array.from(files).map(file => {
         return new Promise((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => {
             const caseText = e.target?.result as string; // Get the file content
-            const userEmail = user?.primaryEmailAddress?.toString(); // Ensure this is a function call
+            const userEmail = user?.primaryEmailAddress?.toString() ?? ''; // Ensure this is a function call
             resolve({
               name: file.name,
               caseText, // Set caseText to the content of the file

@@ -13,6 +13,7 @@ export const env = createEnv({
       .default("development"),
     ACCESS_KEY: z.string(),
     SECRET_ACCESS_KEY: z.string(),
+    MISCONDUCT_CONTAINER_URL: z.string().url(),
   },
 
   /**
@@ -33,6 +34,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     ACCESS_KEY: process.env.ACCESS_KEY,
     SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
+    MISCONDUCT_CONTAINER_URL: process.env.MISCONDUCT_CONTAINER_URL,
 
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
