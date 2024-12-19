@@ -4,7 +4,6 @@ import cuid from "cuid"; // Import the cuid library
 import AWS from 'aws-sdk';
 import { env } from "~/env"
 import axios from 'axios';
-import { ECS } from 'aws-sdk';
 
 
 
@@ -16,11 +15,6 @@ const lambda = new AWS.Lambda({
   secretAccessKey: env.SECRET_ACCESS_KEY
 });
 
-const ecs = new AWS.ECS({
-  region: 'us-east-2', // Replace with your AWS region
-  accessKeyId: env.ACCESS_KEY,
-  secretAccessKey: env.SECRET_ACCESS_KEY
-});
 
 import {
   createTRPCRouter,
@@ -58,37 +52,13 @@ export const postRouter = createTRPCRouter({
         const lambdaResponse = await lambda.invoke(params).promise();
         const responsePayload = JSON.parse(lambdaResponse.Payload as string); // Parse the response payload
 
-        // const ecsParams = {
-        //   cluster: 'sparkmisconduct', // Replace with your ECS cluster name
-        //   taskDefinition: 'spark-msic:1',
-        //   launchType: 'FARGATE',
-        //   networkConfiguration: {
-        //     awsvpcConfiguration: {
-        //       subnets: [
-        //         'subnet-01027964882c086b8 '
-        //       ],
-        //       assignPublicIp: 'ENABLED',
-        //     },
-        //   },
-        //   overrides: {
-        //     containerOverrides: [
-        //       {
-        //         name: 'misc-bert',
-        //         environment: [
-        //           {
-        //             name: 'case_text',
-        //             value: "hi",
-        //           },
-        //         ],
-        //       },
-        //     ],
-        //   },
-        // };
+        const verdictResponse = await axios.post(`${env.MISCONDUCT_CONTAINER_URL}/trigger`, {
+          case_text: file.caseText,
+        });
 
-        // const ecsResponse = await ecs.runTask(ecsParams).promise();
+        const verdict = String(verdictResponse.data); // Convert verdict to string
 
-        // console.log("hereee response:", ecsResponse);
-
+        console.log("Verdict:", verdict);
 
         return {
           id: cuid(),
@@ -96,7 +66,7 @@ export const postRouter = createTRPCRouter({
           date: new Date(),
           userEmail: file.userEmail,
           misconductType: responsePayload, // Set misconductType from Lambda response
-          verdict: null,
+          verdict: verdict,
           caseText: file.caseText,
         };
       });
